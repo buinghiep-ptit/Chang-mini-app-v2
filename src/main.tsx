@@ -6,6 +6,7 @@ import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'sonner'
 import { ChatStoreProvider } from '@/store/chat-store'
 import { routeTree } from './routeTree.gen'
+import '@fontsource-variable/inter'
 import './styles/globals.css'
 
 const router = createRouter({ routeTree })
