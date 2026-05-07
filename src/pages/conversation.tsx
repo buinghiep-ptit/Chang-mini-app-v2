@@ -1,8 +1,37 @@
+import { useEffect, useRef, useState } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
+import { AnimatePresence } from 'framer-motion'
+import { nanoid } from 'nanoid'
 import { ChangComposer } from '@/components/chang/composer'
 import { ChangTopBar } from '@/components/chang/top-bar'
+import { MessageBubble, ThinkingBubble } from '@/components/chang/message-bubble'
+import { type Message, getChangResponse } from '@/store/chat-store'
 
 export function ConversationPage() {
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isThinking, setIsThinking] = useState(false)
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages.length, isThinking])
+
+  function handleSend(text: string, files?: File[]) {
+    if (isThinking) return
+    const attachments = files?.map((f) => ({
+      name: f.name,
+      type: f.type,
+      objectUrl: URL.createObjectURL(f),
+    }))
+    setMessages((m) => [...m, { id: nanoid(), role: 'user', content: text, attachments }])
+    setIsThinking(true)
+    const res = getChangResponse(text)
+    setTimeout(() => {
+      setIsThinking(false)
+      setMessages((m) => [...m, { id: nanoid(), role: 'chang', content: res.content, tasks: res.tasks }])
+    }, 1800)
+  }
+
   return (
     <>
       <ChangTopBar />
@@ -43,8 +72,18 @@ export function ConversationPage() {
             </div>
           </div>
         </div>
+
+        {/* Dynamic messages */}
+        <AnimatePresence initial={false}>
+          {messages.map((msg) => (
+            <MessageBubble key={msg.id} message={msg} />
+          ))}
+          {isThinking && <ThinkingBubble key="thinking" />}
+        </AnimatePresence>
+
+        <div ref={bottomRef} />
       </div>
-      <ChangComposer />
+      <ChangComposer onSend={handleSend} disabled={isThinking} />
     </>
   )
 }
