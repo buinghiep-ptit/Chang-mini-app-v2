@@ -1,36 +1,49 @@
-import { useEffect, useRef } from 'react'
-import { AnimatePresence } from 'framer-motion'
-import { ChangComposer } from '@/components/chang/composer'
-import { ChangTopBar } from '@/components/chang/top-bar'
-import { MessageBubble, ThinkingBubble } from '@/components/chang/message-bubble'
-import { useChatStore, getChangResponse } from '@/store/chat-store'
+import { useEffect, useRef } from "react";
+import { AnimatePresence } from "framer-motion";
+import { ChangComposer } from "@/components/chang/composer";
+import { ChangTopBar } from "@/components/chang/top-bar";
+import {
+  MessageBubble,
+  ThinkingBubble,
+} from "@/components/chang/message-bubble";
+import { useChatStore, getChangResponse } from "@/store/chat-store";
 
 interface ChatPageProps {
-  chatId: string
+  chatId: string;
 }
 
 export function ChatPage({ chatId }: ChatPageProps) {
-  const { state, dispatch } = useChatStore()
-  const conv = state.conversations.find(c => c.id === chatId)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const { state, dispatch } = useChatStore();
+  const conv = state.conversations.find((c) => c.id === chatId);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll on new messages
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [conv?.messages.length, conv?.status])
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [conv?.messages.length, conv?.status]);
 
   function handleSend(text: string, files?: File[]) {
-    if (!conv || conv.status === 'thinking') return
-    const attachments = files?.map(f => ({
+    if (!conv || conv.status === "thinking") return;
+    const attachments = files?.map((f) => ({
       name: f.name,
       type: f.type,
       objectUrl: URL.createObjectURL(f),
-    }))
-    dispatch({ type: 'ADD_USER_MSG', convId: chatId, content: text, attachments })
-    const res = getChangResponse(text)
+    }));
+    dispatch({
+      type: "ADD_USER_MSG",
+      convId: chatId,
+      content: text,
+      attachments,
+    });
+    const res = getChangResponse(text);
     setTimeout(() => {
-      dispatch({ type: 'ADD_CHANG_MSG', convId: chatId, content: res.content, tasks: res.tasks })
-    }, 1800)
+      dispatch({
+        type: "ADD_CHANG_MSG",
+        convId: chatId,
+        content: res.content,
+        tasks: res.tasks,
+      });
+    }, 1800);
   }
 
   if (!conv) {
@@ -38,12 +51,16 @@ export function ChatPage({ chatId }: ChatPageProps) {
       <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
         Không tìm thấy cuộc trò chuyện.
       </div>
-    )
+    );
   }
 
   return (
     <>
-      <ChangTopBar title={conv.title.length > 24 ? conv.title.slice(0, 24) + '…' : conv.title} />
+      <ChangTopBar
+        title={
+          conv.title.length > 24 ? conv.title.slice(0, 24) + "…" : conv.title
+        }
+      />
 
       {/* Conversation title pill */}
       <div className="px-3 pt-3 md:px-6 md:max-w-2xl md:mx-auto md:w-full shrink-0">
@@ -59,7 +76,7 @@ export function ChatPage({ chatId }: ChatPageProps) {
             <MessageBubble key={msg.id} message={msg} />
           ))}
 
-          {conv.status === 'thinking' && <ThinkingBubble key="thinking" />}
+          {conv.status === "thinking" && <ThinkingBubble key="thinking" />}
         </AnimatePresence>
 
         <div ref={bottomRef} />
@@ -69,9 +86,9 @@ export function ChatPage({ chatId }: ChatPageProps) {
         <ChangComposer
           tabs
           onSend={handleSend}
-          disabled={conv.status === 'thinking'}
+          disabled={conv.status === "thinking"}
         />
       </div>
     </>
-  )
+  );
 }

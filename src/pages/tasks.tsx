@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Check, Command, Ellipsis, Globe, Lock, User, X, type LucideIcon } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { nanoid } from 'nanoid'
 import { ChangComposer } from '@/components/chang/composer'
 import { ChangTopBar } from '@/components/chang/top-bar'
+import { useChatStore, getChangResponse } from '@/store/chat-store'
 import { cn } from '@/lib/utils'
 
 type TaskStatus = 'pending' | 'approved' | 'rejected'
@@ -89,7 +91,18 @@ function TaskCard({ task, onApprove, onReject }: { task: TaskItem; onApprove: ()
 
 export function TasksPage() {
   const navigate = useNavigate()
+  const { dispatch } = useChatStore()
   const [groups, setGroups] = useState(INITIAL)
+
+  function handleSend(text: string) {
+    const id = nanoid(8)
+    dispatch({ type: 'CREATE', id, firstMessage: text })
+    const res = getChangResponse(text)
+    setTimeout(() => {
+      dispatch({ type: 'ADD_CHANG_MSG', convId: id, content: res.content, tasks: res.tasks })
+    }, 1800)
+    navigate({ to: '/chat/$chatId', params: { chatId: id } })
+  }
 
   function updateStatus(taskId: string, status: TaskStatus) {
     setGroups(gs => gs.map(g => ({
@@ -130,7 +143,7 @@ export function TasksPage() {
           ))}
         </AnimatePresence>
       </div>
-      <ChangComposer tabs />
+      <ChangComposer tabs onSend={handleSend} />
     </>
   )
 }

@@ -253,7 +253,8 @@ export function ChangComposer({
   return (
     <div
       className={cn(
-        "px-3 pt-2 pb-3 border-t border-border bg-background/95 backdrop-blur-sm flex flex-col gap-2 shrink-0",
+        "px-3 pt-2 pb-3 bg-background/95 backdrop-blur-sm flex flex-col gap-2 shrink-0",
+        // border-t border-border
         className,
       )}
       {...getComposerDropProps()}
