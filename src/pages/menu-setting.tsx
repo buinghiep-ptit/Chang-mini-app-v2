@@ -18,10 +18,10 @@ import { cn } from '@/lib/utils'
 
 export function MenuSettingPage() {
   const navigate = useNavigate()
-  const { state } = useChatStore()
+  const conversations = useChatStore((s) => s.conversations)
   const { resolvedTheme, setTheme } = useTheme()
 
-  const grouped = state.conversations.reduce<Record<string, typeof state.conversations>>(
+  const grouped = conversations.reduce<Record<string, typeof conversations>>(
     (acc, c) => {
       const key = c.group ?? '__none__'
       ;(acc[key] ??= []).push(c)

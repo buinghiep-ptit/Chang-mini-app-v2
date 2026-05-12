@@ -28,22 +28,24 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 export function SidebarNav() {
-  const { state, dispatch } = useChatStore()
+  const conversations = useChatStore((s) => s.conversations)
+  const createConversation = useChatStore((s) => s.createConversation)
+  const addChangMsg = useChatStore((s) => s.addChangMsg)
   const { location } = useRouterState()
   const navigate = useNavigate()
   const { resolvedTheme, setTheme } = useTheme()
 
   function newChat() {
     const id = nanoid(8)
-    dispatch({ type: 'CREATE', id, firstMessage: 'Xin chào Chang!' })
+    createConversation(id, 'Xin chào Chang!')
     setTimeout(() => {
       const res = getChangResponse('hello')
-      dispatch({ type: 'ADD_CHANG_MSG', convId: id, content: res.content })
+      addChangMsg(id, res.content)
     }, 1200)
     navigate({ to: '/chat/$chatId', params: { chatId: id } })
   }
 
-  const grouped = state.conversations.reduce<Record<string, typeof state.conversations>>(
+  const grouped = conversations.reduce<Record<string, typeof conversations>>(
     (acc, c) => { const k = c.group ?? '__none__'; (acc[k] ??= []).push(c); return acc },
     {},
   )

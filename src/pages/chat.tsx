@@ -13,8 +13,10 @@ interface ChatPageProps {
 }
 
 export function ChatPage({ chatId }: ChatPageProps) {
-  const { state, dispatch } = useChatStore();
-  const conv = state.conversations.find((c) => c.id === chatId);
+  const conversations = useChatStore((s) => s.conversations);
+  const addUserMsg = useChatStore((s) => s.addUserMsg);
+  const addChangMsg = useChatStore((s) => s.addChangMsg);
+  const conv = conversations.find((c) => c.id === chatId);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll on new messages
@@ -29,20 +31,10 @@ export function ChatPage({ chatId }: ChatPageProps) {
       type: f.type,
       objectUrl: URL.createObjectURL(f),
     }));
-    dispatch({
-      type: "ADD_USER_MSG",
-      convId: chatId,
-      content: text,
-      attachments,
-    });
+    addUserMsg(chatId, text, attachments);
     const res = getChangResponse(text);
     setTimeout(() => {
-      dispatch({
-        type: "ADD_CHANG_MSG",
-        convId: chatId,
-        content: res.content,
-        tasks: res.tasks,
-      });
+      addChangMsg(chatId, res.content, res.tasks);
     }, 1800);
   }
 

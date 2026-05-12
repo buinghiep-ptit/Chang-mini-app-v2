@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, type ReactNode } from 'react'
+import { create } from 'zustand'
 import { nanoid } from 'nanoid'
 
 // ── Types ─────────────────────────────────────────────────────
@@ -33,124 +33,76 @@ export type Conversation = {
   group?: string
 }
 
-// ── Reducer ────────────────────────────────────────────────────
-type State = { conversations: Conversation[] }
-
-type Action =
-  | { type: 'CREATE'; id: string; firstMessage: string }
-  | { type: 'ADD_USER_MSG'; convId: string; content: string; attachments?: Attachment[] }
-  | { type: 'ADD_CHANG_MSG'; convId: string; content: string; tasks?: TaskStep[] }
-  | { type: 'FINISH_TASK'; convId: string; msgId: string; taskId: string }
-  | { type: 'SET_STATUS'; convId: string; status: Conversation['status'] }
-
-function reducer(state: State, action: Action): State {
-  switch (action.type) {
-    case 'CREATE': {
-      const conv: Conversation = {
-        id: action.id,
-        title: action.firstMessage.slice(0, 42) || 'Hội thoại mới',
-        messages: [{ id: nanoid(), role: 'user', content: action.firstMessage }],
-        status: 'thinking',
-        createdAt: new Date(),
-      }
-      return { conversations: [conv, ...state.conversations] }
-    }
-    case 'ADD_USER_MSG':
-      return {
-        conversations: state.conversations.map(c =>
-          c.id === action.convId
-            ? {
-                ...c,
-                status: 'thinking',
-                messages: [...c.messages, { id: nanoid(), role: 'user', content: action.content, attachments: action.attachments }],
-              }
-            : c,
-        ),
-      }
-    case 'ADD_CHANG_MSG':
-      return {
-        conversations: state.conversations.map(c =>
-          c.id === action.convId
-            ? {
-                ...c,
-                status: 'idle',
-                messages: [
-                  ...c.messages,
-                  { id: nanoid(), role: 'chang', content: action.content, tasks: action.tasks },
-                ],
-              }
-            : c,
-        ),
-      }
-    case 'FINISH_TASK':
-      return {
-        conversations: state.conversations.map(c =>
-          c.id === action.convId
-            ? {
-                ...c,
-                messages: c.messages.map(m =>
-                  m.id === action.msgId
-                    ? {
-                        ...m,
-                        tasks: m.tasks?.map(t =>
-                          t.id === action.taskId ? { ...t, status: 'done' } : t,
-                        ),
-                      }
-                    : m,
-                ),
-              }
-            : c,
-        ),
-      }
-    case 'SET_STATUS':
-      return {
-        conversations: state.conversations.map(c =>
-          c.id === action.convId ? { ...c, status: action.status } : c,
-        ),
-      }
-  }
+// ── Store ──────────────────────────────────────────────────────
+interface ChatStore {
+  conversations: Conversation[]
+  createConversation: (id: string, firstMessage: string) => void
+  addUserMsg: (convId: string, content: string, attachments?: Attachment[]) => void
+  addChangMsg: (convId: string, content: string, tasks?: TaskStep[]) => void
+  finishTask: (convId: string, msgId: string, taskId: string) => void
+  setStatus: (convId: string, status: Conversation['status']) => void
 }
 
-// ── Context ────────────────────────────────────────────────────
-type Ctx = { state: State; dispatch: React.Dispatch<Action> }
-const ChatCtx = createContext<Ctx | null>(null)
+export const useChatStore = create<ChatStore>((set) => ({
+  conversations: [
+    { id: 'demo-1', title: 'Tử vi & Bát tự luận giải', messages: [], status: 'idle', createdAt: new Date() },
+    { id: 'demo-2', title: 'Tra cứu nhanh thông tin hợp đồng HNH1981', messages: [], status: 'idle', createdAt: new Date(), group: 'Dịch vụ nhân sự' },
+    { id: 'demo-3', title: 'Bồi thường Bảo hiểm do ốm', messages: [], status: 'idle', createdAt: new Date(), group: 'Dịch vụ nhân sự' },
+  ],
 
-export function ChatStoreProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, {
-    conversations: [
-      {
-        id: 'demo-1',
-        title: 'Tử vi & Bát tự luận giải',
-        messages: [],
-        status: 'idle',
-        createdAt: new Date(),
-      },
-      {
-        id: 'demo-2',
-        title: 'Tra cứu nhanh thông tin hợp đồng HNH1981',
-        messages: [],
-        status: 'idle',
-        createdAt: new Date(),
-        group: 'Dịch vụ nhân sự',
-      },
-      {
-        id: 'demo-3',
-        title: 'Bồi thường Bảo hiểm do ốm',
-        messages: [],
-        status: 'idle',
-        createdAt: new Date(),
-        group: 'Dịch vụ nhân sự',
-      },
-    ],
-  })
-  return <ChatCtx.Provider value={{ state, dispatch }}>{children}</ChatCtx.Provider>
-}
+  createConversation: (id, firstMessage) =>
+    set((s) => ({
+      conversations: [
+        {
+          id,
+          title: firstMessage.slice(0, 42) || 'Hội thoại mới',
+          messages: [{ id: nanoid(), role: 'user', content: firstMessage }],
+          status: 'thinking',
+          createdAt: new Date(),
+        },
+        ...s.conversations,
+      ],
+    })),
 
-export function useChatStore() {
-  const ctx = useContext(ChatCtx)
-  if (!ctx) throw new Error('useChatStore must be inside ChatStoreProvider')
-  return ctx
-}
+  addUserMsg: (convId, content, attachments) =>
+    set((s) => ({
+      conversations: s.conversations.map((c) =>
+        c.id === convId
+          ? { ...c, status: 'thinking', messages: [...c.messages, { id: nanoid(), role: 'user', content, attachments }] }
+          : c,
+      ),
+    })),
+
+  addChangMsg: (convId, content, tasks) =>
+    set((s) => ({
+      conversations: s.conversations.map((c) =>
+        c.id === convId
+          ? { ...c, status: 'idle', messages: [...c.messages, { id: nanoid(), role: 'chang', content, tasks }] }
+          : c,
+      ),
+    })),
+
+  finishTask: (convId, msgId, taskId) =>
+    set((s) => ({
+      conversations: s.conversations.map((c) =>
+        c.id === convId
+          ? {
+              ...c,
+              messages: c.messages.map((m) =>
+                m.id === msgId
+                  ? { ...m, tasks: m.tasks?.map((t) => (t.id === taskId ? { ...t, status: 'done' } : t)) }
+                  : m,
+              ),
+            }
+          : c,
+      ),
+    })),
+
+  setStatus: (convId, status) =>
+    set((s) => ({
+      conversations: s.conversations.map((c) => (c.id === convId ? { ...c, status } : c)),
+    })),
+}))
 
 // ── Simulated Chang responses ──────────────────────────────────
 const RESPONSES: [RegExp, string, TaskStep[]?][] = [

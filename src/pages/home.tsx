@@ -46,16 +46,16 @@ const SUGGESTIONS: Suggestion[] = [
 
 export function HomePage() {
   const navigate = useNavigate()
-  const { dispatch } = useChatStore()
+  const createConversation = useChatStore((s) => s.createConversation)
+  const addChangMsg = useChatStore((s) => s.addChangMsg)
 
   function startChat(text: string) {
     const id = nanoid(8)
-    dispatch({ type: 'CREATE', id, firstMessage: text })
+    createConversation(id, text)
     navigate({ to: '/chat/$chatId', params: { chatId: id } })
-    // simulate Chang response
     const res = getChangResponse(text)
     setTimeout(() => {
-      dispatch({ type: 'ADD_CHANG_MSG', convId: id, content: res.content, tasks: res.tasks })
+      addChangMsg(id, res.content, res.tasks)
     }, 1800)
   }
 

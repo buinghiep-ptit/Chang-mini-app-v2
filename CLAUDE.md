@@ -1,18 +1,22 @@
-# CLAUDE.md — Chang SDK Mini App v2
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Stack
 
-| Layer | Tool |
-|---|---|
-| Bundler | Vite 6 |
-| UI framework | React 19 + TypeScript |
-| Styling | Tailwind v4 (`@tailwindcss/vite`) + shadcn/ui convention |
-| Routing | **TanStack Router** (file-based, `src/routes/`) |
-| Data fetching | **TanStack Query** + **Axios** (`src/lib/http.ts`) |
-| Theme | `next-themes` — class `.dark` on `<html>` |
-| Toast | `sonner` |
-| Form | `react-hook-form` + `@hookform/resolvers` + `zod` |
-| Package manager | **yarn** |
+| Layer           | Tool                                                        |
+| --------------- | ----------------------------------------------------------- |
+| Bundler         | Vite 6                                                      |
+| UI framework    | React 19 + TypeScript                                       |
+| Styling         | Tailwind v4 (`@tailwindcss/vite`) + shadcn/ui convention    |
+| Routing         | **TanStack Router** (file-based, `src/routes/`)             |
+| Data fetching   | **TanStack Query** + **Axios** (`src/lib/http.ts`)          |
+| State           | **Zustand** (`src/store/chat-store.tsx`)                    |
+| Animation       | `framer-motion` (chat message transitions)                  |
+| Theme           | `next-themes` — class `.dark` on `<html>`                   |
+| Toast           | `sonner`                                                    |
+| Form            | `react-hook-form` + `@hookform/resolvers` + `zod`           |
+| Package manager | **yarn**                                                    |
 
 ## Commands
 
@@ -22,143 +26,146 @@ yarn build      # tsc + vite build → dist/
 yarn preview    # preview dist/
 ```
 
-## Map nhanh
+## File map
 
 ```
 src/
-├── routes/           # TanStack Router file-based routes
-│   ├── __root.tsx    # Root layout (MobileShell wrapper)
-│   ├── index.tsx     # / → HomePage
-│   ├── conversation.tsx
+├── routes/                  # TanStack Router — file-based, auto-generates routeTree.gen.ts
+│   ├── __root.tsx           # Root layout (MobileShell + AppLayout)
+│   ├── index.tsx            # / → HomePage
+│   ├── chat/
+│   │   ├── index.tsx        # /chat → (redirect or empty)
+│   │   └── $chatId.tsx      # /chat/:chatId → ChatPage
+│   ├── apps.tsx             # /apps → AppsPage
+│   ├── tasks.tsx            # /tasks → TasksPage
+│   └── menu.tsx             # /menu → MenuSettingPage
+├── pages/                   # Page components (pure UI, no route logic)
+│   ├── home.tsx
+│   ├── chat.tsx
 │   ├── apps.tsx
 │   ├── tasks.tsx
-│   ├── menu.tsx
-│   └── conversation-2.tsx
-├── pages/            # Page components (pure UI, no route logic)
+│   └── menu-setting.tsx
 ├── components/
-│   ├── chang/        # Chang-specific: TopBar, Composer, Mascot
-│   ├── layout/       # MobileShell (mobile-first, card on tablet+)
-│   └── ui/           # shadcn/ui components (add via: npx shadcn add <name>)
+│   ├── chang/               # Chang-specific: TopBar, Composer, MessageBubble, Mascot
+│   ├── layout/              # MobileShell, AppLayout, BottomNav, SidebarNav
+│   └── ui/                  # shadcn/ui components
+├── store/
+│   └── chat-store.tsx       # Zustand store — conversations + actions (createConversation, addUserMsg, addChangMsg, ...)
 ├── lib/
-│   ├── utils.ts      # cn() helper
-│   └── http.ts       # Axios instance (Bearer token + 401 redirect)
+│   ├── utils.ts             # cn() helper
+│   └── http.ts              # Axios instance (Bearer token + 401 redirect)
 ├── styles/
-│   └── globals.css   # Tailwind v4 import + CSS vars (violet theme)
+│   └── globals.css          # Tailwind v4 import + CSS vars
 └── assets/
     └── chang-mascot.png
 ```
 
 ## Design system
 
+Xem **`DESIGN.md`** — token đầy đủ, component specs, motion catalog, do & don't.
+
+Tóm tắt nhanh:
+
 - **Primary**: Violet 600 · `hsl(var(--primary))`
 - **Radius base**: `rounded-lg` = 16px
-- **Token rule**: không bao giờ dùng hex trực tiếp — dùng `bg-primary`, `text-muted-foreground`, `chart-1…6`, v.v.
-- **Dark mode**: toggle class `dark` trên `<html>` qua `next-themes`. Không tự viết dark variant.
-- **Mascot**: chỉ dùng trong empty/welcome/thinking states, không recolor.
-- Xem `SKILL.md` để biết token cheat-sheet đầy đủ.
+- Không dùng hex trực tiếp — luôn dùng CSS tokens (`bg-primary`, `text-muted-foreground`, `chart-1…6`)
+- Không viết `dark:` variant trong component — token tự swap qua `.dark` class
+- Mascot: chỉ trong empty / welcome / thinking states, không recolor
 
-## Mobile-first layout
+## Routing
 
-`MobileShell` trong `src/components/layout/mobile-shell.tsx`:
-- **Mobile**: full screen (`w-full h-dvh`)
-- **Tablet+**: centered card 390×844, `rounded-[2.5rem]`, `shadow-xl`
-
-## Routing pattern (TanStack Router file-based)
-
-Thêm route mới: tạo file trong `src/routes/`. Router plugin tự generate `src/routeTree.gen.ts`.
+Thêm route mới: tạo file trong `src/routes/`. Router Vite plugin tự generate `src/routeTree.gen.ts`.
 
 ```tsx
 // src/routes/my-page.tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { MyPage } from '@/pages/my-page'
-export const Route = createFileRoute('/my-page')({ component: MyPage })
+import { createFileRoute } from "@tanstack/react-router";
+import { MyPage } from "@/pages/my-page";
+export const Route = createFileRoute("/my-page")({ component: MyPage });
 ```
 
-## shadcn/ui components
+## shadcn/ui
 
 ```bash
 npx shadcn add button input card badge avatar ...
 ```
 
-`components.json` đã được cấu hình với `baseColor: violet`, `css: src/styles/globals.css`.
+`components.json` đã cấu hình `baseColor: violet`, `css: src/styles/globals.css`.
+
+## Provider hierarchy (main.tsx)
+
+```
+QueryClientProvider
+  ThemeProvider (attribute="class", defaultTheme="light")
+    RouterProvider
+    Toaster (sonner)
+```
+
+Zustand store không cần Provider — `useChatStore` có thể gọi trực tiếp từ bất kỳ component nào.
+
+## Authentication
+
+`http.ts` tự động đính Bearer token từ `localStorage.getItem('access_token')` vào mọi request. Nếu nhận 401, xóa token và redirect về `/login`.
+
+## Layout
+
+`AppLayout` (`src/components/layout/app-layout.tsx`) render responsive:
+
+- **Mobile** (`< md`): full-screen + `BottomNav`
+- **Tablet/Desktop** (`md+`): sidebar 272–300px + `<Outlet />` (không có BottomNav)
 
 ## API / Data fetching
 
 ```tsx
-import { useQuery } from '@tanstack/react-query'
-import { http } from '@/lib/http'
+import { useQuery } from "@tanstack/react-query";
+import { http } from "@/lib/http";
 
 const { data } = useQuery({
-  queryKey: ['conversations'],
-  queryFn: () => http.get('/conversations').then(r => r.data),
-})
+  queryKey: ["conversations"],
+  queryFn: () => http.get("/conversations").then((r) => r.data),
+});
 ```
 
 Axios base URL: `VITE_API_URL` env var (default `/api`).
 
+---
 
-# CLAUDE.md
+## Coding guidelines
 
-Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+### 1. Think Before Coding
 
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+Trước khi implement:
 
-## 1. Think Before Coding
+- Nêu rõ assumption. Nếu không chắc → hỏi.
+- Nếu có nhiều cách hiểu → trình bày, không tự chọn im lặng.
+- Nếu có cách đơn giản hơn → nói ra, phản biện khi cần.
 
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
+### 2. Simplicity First
 
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
+- Không thêm feature ngoài yêu cầu.
+- Không tạo abstraction cho code chỉ dùng một lần.
+- Không viết error handling cho scenario không thể xảy ra.
+- Nếu viết 200 dòng mà có thể là 50 → viết lại.
 
-## 2. Simplicity First
+### 3. Surgical Changes
 
-**Minimum code that solves the problem. Nothing speculative.**
+Khi sửa code hiện có:
 
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
+- Không "cải thiện" code xung quanh, comment, hay format.
+- Không refactor thứ không bị lỗi.
+- Match style hiện tại, dù có thể làm khác.
+- Phát hiện dead code không liên quan → nhắc, không xóa.
 
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+Khi thay đổi tạo ra orphan: xóa import/variable/function do **thay đổi của mình** tạo ra. Không xóa dead code có sẵn.
 
-## 3. Surgical Changes
+Kiểm tra: mỗi dòng thay đổi phải truy xuất được về yêu cầu của người dùng.
 
-**Touch only what you must. Clean up only your own mess.**
+### 4. Goal-Driven Execution
 
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
+Với task nhiều bước, state plan ngắn:
 
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-The test: Every changed line should trace directly to the user's request.
-
-## 4. Goal-Driven Execution
-
-**Define success criteria. Loop until verified.**
-
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
-
-For multi-step tasks, state a brief plan:
 ```
 1. [Step] → verify: [check]
 2. [Step] → verify: [check]
-3. [Step] → verify: [check]
 ```
 
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
-
----
-
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+Tiêu chí thành công rõ ràng → có thể tự loop đến khi đúng mà không cần hỏi lại.

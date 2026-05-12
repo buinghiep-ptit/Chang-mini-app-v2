@@ -7,20 +7,22 @@ import { cn } from '@/lib/utils'
 export function BottomNav() {
   const { location } = useRouterState()
   const navigate = useNavigate()
-  const { state, dispatch } = useChatStore()
+  const conversations = useChatStore((s) => s.conversations)
+  const createConversation = useChatStore((s) => s.createConversation)
+  const addChangMsg = useChatStore((s) => s.addChangMsg)
 
   function newChat() {
     // If there's an idle conversation, just go home; else create one
-    const latest = state.conversations[0]
+    const latest = conversations[0]
     if (latest) {
       navigate({ to: '/chat/$chatId', params: { chatId: latest.id } })
       return
     }
     const id = nanoid(8)
-    dispatch({ type: 'CREATE', id, firstMessage: 'Xin chào Chang!' })
+    createConversation(id, 'Xin chào Chang!')
     setTimeout(() => {
       const res = getChangResponse('hello')
-      dispatch({ type: 'ADD_CHANG_MSG', convId: id, content: res.content })
+      addChangMsg(id, res.content)
     }, 1200)
     navigate({ to: '/chat/$chatId', params: { chatId: id } })
   }

@@ -4,7 +4,6 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'sonner'
-import { ChatStoreProvider } from '@/store/chat-store'
 import { routeTree } from './routeTree.gen'
 import '@fontsource-variable/inter'
 import './styles/globals.css'
@@ -23,9 +22,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="light" disableTransitionOnChange>
-        <ChatStoreProvider>
           <RouterProvider router={router} />
-        </ChatStoreProvider>
         <Toaster richColors position="top-center" />
       </ThemeProvider>
     </QueryClientProvider>
