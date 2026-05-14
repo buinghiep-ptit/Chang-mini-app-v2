@@ -1,0 +1,7 @@
+{
+  "model": "claude-sonnet-4-6",
+  "env": {
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-6",
+    "CLAUDE_CODE_DISABLE_1M_CONTEXT": "1"
+  }
+}
